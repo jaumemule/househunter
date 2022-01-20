@@ -1,0 +1,90 @@
+version: '3.4'
+services:
+
+  #PHP Service
+  pararius:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pararius:local
+    container_name: pararius
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "9000"
+    command:
+      - /bin/sh
+      - -c
+      - "php bin/console app:scrap"
+    environment:
+      APP_DEBUG: 0
+      APP_ENV: local
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - parariusearcher
+#
+#  #Nginx Service
+#  pararius_server:
+#    image: nginx:alpine
+#    container_name: pararius_server
+#    restart: unless-stopped
+#    tty: true
+#    volumes:
+#      - ./:/var/www
+#      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+#    networks:
+#      - parariusearcher
+
+  #MySQL Service
+  pararius_db:
+    image: 'mysql:5.7'
+    container_name: pararius_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_ROOT_USER: pararius_local
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: parariusearcher
+      MYSQL_USER: pararius_local
+      MYSQL_PASSWORD: secret
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    command: --init-file /hot_storage_local_init.sql
+    volumes:
+      - ./docker/mysql/hot_storage_local_init.sql:/hot_storage_local_init.sql
+      - dbdata:/var/lib/mysql/
+      - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - parariusearcher
+
+#Docker Networks
+
+###> doctrine/doctrine-bundle ###
+  database:
+    image: postgres:${POSTGRES_VERSION:-13}-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      # You should definitely change the password in production
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ChangeMe}
+      POSTGRES_USER: ${POSTGRES_USER:-symfony}
+    volumes:
+      - db-data:/var/lib/postgresql/data:rw
+      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
+      # - ./docker/db/data:/var/lib/postgresql/data:rw
+###< doctrine/doctrine-bundle ###
+networks:
+  parariusearcher:
+    driver: bridge
+
+#Volumes
+volumes:
+  dbdata:
+
+###> doctrine/doctrine-bundle ###
+  db-data:
+###< doctrine/doctrine-bundle ###
