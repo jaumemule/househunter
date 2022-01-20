@@ -51,7 +51,7 @@ final class Scrapper extends Command
         }
 
         if ($notified === false) {
-            $this->sendMessage('No new listings found. Will retry in '.$this->sleepTimeInMinutes.' min');
+            $this->healthCheckControl();
         }
 
         $this->done($output);
@@ -104,7 +104,7 @@ final class Scrapper extends Command
     private function buildCrawler(string $url): Crawler
     {
         // in case of local testing, uncomment this line
-        // return new Crawler(file_get_contents('/var/www/src/example/index.html'));
+//        return new Crawler(file_get_contents('/var/www/src/example/index.html'));
 
         $userAgent = \Campo\UserAgent::random();
         $client = new Client(HttpClient::create(array(
@@ -141,6 +141,19 @@ final class Scrapper extends Command
         if (count($links) === 0) {
             $this->sendMessage('I cold not fetch data! Perhaps we are banned, ooops!');
             $this->done($output);
+        }
+    }
+
+    protected function healthCheckControl(): void
+    {
+        $date = new \DateTimeImmutable();
+        $hour = $date->format('H');
+        $minutes = $date->format('i');
+        $healthCheckHour = [1, 5, 9, 13, 17, 21];
+        $minuteControl = $this->sleepTimeInMinutes > 60 ? 60 : $this->sleepTimeInMinutes;
+
+        if (in_array($hour, $healthCheckHour) && $minutes <= $minuteControl) {
+            $this->sendMessage('This is a health check control. The app it is still alive, but no new listings are found.');
         }
     }
 }
