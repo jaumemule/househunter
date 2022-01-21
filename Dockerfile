@@ -42,11 +42,13 @@ WORKDIR /var/www
 # Application layer
 # ----------------------------------------------------------------
 
+RUN chmod -R 777 /var/www # just because yes, or permissions complain in VPS
+
 # Copy composer files
 COPY composer.lock composer.json /var/www/
 
 # Install composer dependencies
-RUN composer install --no-progress --no-plugins --no-scripts --no-dev --optimize-autoloader
+RUN sudo composer install --no-progress --no-plugins --no-scripts --no-dev --optimize-autoloader
 
 # Copy existing application directory contents
 COPY . /var/www
