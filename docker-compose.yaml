@@ -29,7 +29,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: pararius:local
-    container_name: pararius
+    container_name: househunter_bootstrap
     restart: unless-stopped
     tty: true
     environment:
