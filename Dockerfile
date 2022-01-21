@@ -35,8 +35,6 @@ RUN set -ex \
     && mkdir -p /var/www/.composer/cache/vcs \
     && chown -R www:www /var/www/.composer
 
-RUN apk add --no-cache su-exec
-
 # Set your working directory
 WORKDIR /var/www
 
@@ -44,13 +42,11 @@ WORKDIR /var/www
 # Application layer
 # ----------------------------------------------------------------
 
-RUN chmod -R 777 /var/www # just because yes, or permissions complain in VPS
-
 # Copy composer files
 COPY composer.lock composer.json /var/www/
 
 # Install composer dependencies
-RUN sudo composer install --no-progress --no-plugins --no-scripts --no-dev --optimize-autoloader
+RUN composer install --no-progress --no-plugins --no-scripts --no-dev --optimize-autoloader
 
 # Copy existing application directory contents
 COPY . /var/www

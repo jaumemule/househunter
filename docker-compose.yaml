@@ -32,7 +32,6 @@ services:
     container_name: househunter_bootstrap
     restart: unless-stopped
     tty: true
-    command: sudo composer install --ignore-platform-reqs
     environment:
       APP_DEBUG: 0
       APP_ENV: local
