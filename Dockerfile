@@ -35,6 +35,8 @@ RUN set -ex \
     && mkdir -p /var/www/.composer/cache/vcs \
     && chown -R www:www /var/www/.composer
 
+RUN apk add --no-cache su-exec
+
 # Set your working directory
 WORKDIR /var/www
 
