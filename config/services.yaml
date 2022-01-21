@@ -25,7 +25,7 @@ services:
             $destinationUrl: # it is an array!
                 - "https://www.pararius.com/apartments/amsterdam/district-centrum-west,oud-west,westerpark/1400-2000/2-bedrooms/furnished/75m2"
                 - "https://www.pararius.com/apartments/amsterdam/district-centrum-west,oud-west,westerpark/1400-2000/3-rooms/75m2"
-            $telegramChatId: ""
+            $telegramChatId: "-409302603"
             $telegramToken: "5095834247:AAHs9-oqCynBTedoVRz0ZSRT0eGkGpkNoBc"
             $sleepTimeInMinutes: 15
 

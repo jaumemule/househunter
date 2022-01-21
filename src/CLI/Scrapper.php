@@ -41,12 +41,15 @@ final class Scrapper extends Command
         }
 
         $this->guardIsBanned($links, $output);
+        $isDbEmpty = $this->isDbEmpty();
 
         $notified = false;
         foreach ($links as $link) {
             if($this->persistIfDoesNotExist($link) === false) {
                 $notified = true;
-                $this->sendMessage('CHAN CHAN!!!! NEW APARTMENT AVAILABLE! ' . 'https://www.pararius.com/' . $link);
+                if ($isDbEmpty === false) {
+                    $this->sendMessage('CHAN CHAN!!!! NEW APARTMENT AVAILABLE! ' . 'https://www.pararius.com/' . $link);
+                }
             }
         }
 
@@ -70,6 +73,15 @@ final class Scrapper extends Command
         $result = curl_exec($ch);
         curl_close($ch);
         return $result;
+    }
+
+    private function isDbEmpty(): bool
+    {
+        $result = $this->sql->fetchAllAssociative(
+            'SELECT id FROM listings',
+        );
+
+        return count($result) === 0;
     }
 
     private function persistIfDoesNotExist(string $link): bool
