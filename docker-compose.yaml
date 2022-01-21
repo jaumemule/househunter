@@ -10,8 +10,6 @@ services:
     container_name: pararius
     restart: unless-stopped
     tty: true
-    ports:
-      - "9000"
     command:
       - /bin/sh
       - -c
@@ -25,18 +23,24 @@ services:
       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
     networks:
       - parariusearcher
-#
-#  #Nginx Service
-#  pararius_server:
-#    image: nginx:alpine
-#    container_name: pararius_server
-#    restart: unless-stopped
-#    tty: true
-#    volumes:
-#      - ./:/var/www
-#      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
-#    networks:
-#      - parariusearcher
+
+  bootstrap_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pararius:local
+    container_name: pararius
+    restart: unless-stopped
+    tty: true
+    environment:
+      APP_DEBUG: 0
+      APP_ENV: local
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - parariusearcher
 
   #MySQL Service
   pararius_db:
