@@ -161,11 +161,11 @@ final class Scrapper extends Command
         $date = new \DateTimeImmutable();
         $hour = $date->format('H');
         $minutes = $date->format('i');
-        $healthCheckHour = [1, 5, 9, 13, 17, 21];
+        $healthCheckHour = [12];
         $minuteControl = $this->sleepTimeInMinutes > 60 ? 60 : $this->sleepTimeInMinutes;
 
         if (in_array($hour, $healthCheckHour) && $minutes <= $minuteControl) {
-            $this->sendMessage('This is a health check control. The app it is still alive, but no new listings are found.');
+            $this->sendMessage('This is a daily health check control. The app it is still alive, but no new listings are found.');
         }
     }
 }
