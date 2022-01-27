@@ -29,6 +29,14 @@ final class Scrapper extends Command
         parent::__construct();
     }
 
+    protected function initialize(InputInterface $input, OutputInterface $output)
+    {
+        parent::initialize($input, $output);
+        if ($this->sleepTimeInMinutes < 15) {
+            $this->sleepTimeInMinutes = 15; # abuse control
+        }
+    }
+
     protected function configure(): void
     {
         $this->setDescription('Will scrap houses. This tool is meant to massage your brain and drain stress');
@@ -52,34 +60,24 @@ final class Scrapper extends Command
 
         foreach ($urls as $url) {
             $crawler = $this->buildCrawler($url);
-
             $platform = $this->definePlatform($url);
-
             $links = array_merge($links, $this->fetchLinks($platform, $crawler));
+            $this->guardIsBanned($links, $platform, $output);
             $text = array_merge($text, $this->fetchText($platform, $crawler));
         }
 
-        $this->guardIsBanned($links, $output);
         $isDbEmpty = $this->isDbEmpty();
 
         $notified = false;
         foreach ($links as $key => $link) {
-            $urlInfo = parse_url($link);
-
-            $baseUrl = $urlInfo['host']; //hostname
-
-            if($this->persistIfDoesNotExist($link) === false) {
+            $name = null;
+            if (key_exists($key, $text)) {
+                $name = $text[$key];
+            }
+            if($this->persistIfDoesNotExist($link, $name) === false) {
                 $notified = true;
                 if ($isDbEmpty === false) {
-                    if ($baseUrl !== 'https://www.pararius.com/') {
-                        $baseUrl = '';
-                        $platform = 'Pararius';
-                    } else {
-                        $platform = 'Funda';
-                    }
-
-                    $url = $baseUrl . $link;
-                    $this->sendMessage("CHAN CHAN!!!! \n\n " . $platform . "\n\n" . $text[$key] . "\n\n" . $url ."\n\n");
+                    $this->sendMessage("CHAN CHAN!!!! New listing!\n\n" . 'in: ' . $platform . "\n\n" . $name . "\n\n" . $link ."\n\n");
                 }
             }
         }
@@ -94,7 +92,7 @@ final class Scrapper extends Command
 
     private function sendMessage($messaggio) {
         if ($this->isFakeRequest === true) {
-            echo $messaggio .'\n';
+            echo $messaggio ."\n";
             return true;
         }
 
@@ -120,7 +118,7 @@ final class Scrapper extends Command
         return count($result) === 0;
     }
 
-    private function persistIfDoesNotExist(string $link): bool
+    private function persistIfDoesNotExist(string $link, ?string $name = null): bool
     {
         $result = $this->sql->fetchAllAssociative(
             'SELECT id FROM listings WHERE url = :url',
@@ -131,9 +129,10 @@ final class Scrapper extends Command
 
         if (count($result) === 0) {
             $this->sql->executeQuery(
-                'INSERT INTO listings (url) VALUES (:url)',
+                'INSERT INTO listings (url, name) VALUES (:url, :name)',
                 [
                     'url' => $link,
+                    'name' => $name,
                 ]
             );
             return false;
@@ -156,7 +155,7 @@ final class Scrapper extends Command
     {
         // in case of local testing, uncomment this line
         if ($this->isFakeRequest === true) {
-            return new Crawler(file_get_contents('/var/www/src/example/pararius.html'));
+            return new Crawler(file_get_contents('/var/www/src/example/funda.html'));
         }
 
         $userAgent = \Campo\UserAgent::random();
@@ -180,18 +179,22 @@ final class Scrapper extends Command
     private function fetchLinks(string $platform, Crawler $crawler): array
     {
         $selector = '';
+        $baseUrl = '';
 
         if ($platform === 'Pararius') {
             $selector = 'h2 > a';
+            $baseUrl = 'https://www.pararius.com';
         } elseif ($platform === 'Funda') {
-            $selector = 'h2 > a'; // TODO
+            $selector = 'div[class="search-result__header-title-col"] > a[data-object-url-tracking="resultlist"]';
+            $baseUrl = 'https://www.funda.nl';
         }
 
-        $links = $crawler->filter($selector)->each(function ($node) {
+        $links = $crawler->filter($selector)->each(function ($node) use ($baseUrl) {
             $href = $node->extract(array('href'));
-            return $links[] = $href[0];
+            return $links[] = $baseUrl . $href[0];
         });
-        return $links;
+
+        return array_unique($links);
     }
 
     private function fetchText(string $platform, Crawler $crawler): array
@@ -201,23 +204,24 @@ final class Scrapper extends Command
         if ($platform === 'Pararius') {
             $selector = 'h2';
         } elseif ($platform === 'Funda') {
-            $selector = 'h2'; // TODO
+            $selector = 'h2[data-test-search-result-header-title]'; // TODO
         }
 
         $text = $crawler->filter($selector)->each(function ($node) {
             $extracted = $node->text();
             return $text[] = $extracted;
         });
+
         return $text;
     }
 
     /**
      * @param array $links
      */
-    private function guardIsBanned(array $links, OutputInterface $output): void
+    private function guardIsBanned(array $links, string $platform, OutputInterface $output): void
     {
         if (count($links) === 0) {
-            $this->sendMessage('I cold not fetch data! Perhaps we are banned, ooops!');
+            $this->sendMessage('I cold not fetch data! Perhaps we are banned in '.$platform.', ooops!');
             $this->done($output);
         }
     }
@@ -244,10 +248,10 @@ final class Scrapper extends Command
         $urlInfo = parse_url($url);
 
         $baseUrl = $urlInfo['host']; //hostname
-        if ($baseUrl !== 'https://www.pararius.com/') {
-            $platform = 'Pararius';
-        } else {
+        if ($baseUrl === 'www.funda.nl') {
             $platform = 'Funda';
+        } else {
+            $platform = 'Pararius';
         }
         return $platform;
     }
