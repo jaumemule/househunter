@@ -1,34 +1,20 @@
-##### DO NOT TOUCH ######
 parameters:
 
 services:
     _defaults:
         autowire: true
         autoconfigure: true
-    Pararius\:
+    HouseHunter\:
         resource: '../src/'
         exclude:
             - '../src/Kernel.php'
 
     Fraud\Application\Bootstrap\EscapingMysqlPasswordEnvVar: ~
 
-##### END OF DO NOT TOUCH ######
-
-
-
-##### CONFIGURE ME!!!!!! ######
-##### CONFIGURE ME!!!!!! ######
-##### CONFIGURE ME!!!!!! ######
-
-    Pararius\CLI\Scrapper:
+    HouseHunter\CLI\Scrapper:
         arguments:
-            $destinationUrl: # it is an array!
-                - "https://www.pararius.com/apartments/amsterdam/district-centrum-west,oud-west,westerpark/1400-2000/2-bedrooms/furnished/75m2"
-                - "https://www.pararius.com/apartments/amsterdam/district-centrum-west,oud-west,westerpark/1400-2000/3-rooms/75m2"
-            $telegramChatId: "-409302603"
-            $telegramToken: "5095834247:AAHs9-oqCynBTedoVRz0ZSRT0eGkGpkNoBc"
-            $sleepTimeInMinutes: 15
-
-##### CONFIGURE ME!!!!!! ######
-##### CONFIGURE ME!!!!!! ######
-##### CONFIGURE ME!!!!!! ######
+            $destinationUrl: '%env(resolve:SEARCHES)%'
+            $telegramChatId: '%env(resolve:TELEGRAM_CHAT_ID)%'
+            $telegramToken: '%env(resolve:TELEGRAM_TOKEN)%'
+            $sleepTimeInMinutes: '%env(resolve:SCRAP_EVERY_MINUTES)%'
+            $isFakeRequest: '%env(resolve:FAKE_CALL)%'

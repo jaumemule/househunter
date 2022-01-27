@@ -2,12 +2,12 @@ version: '3.4'
 services:
 
   #PHP Service
-  pararius:
+  househunter:
     build:
       context: .
       dockerfile: Dockerfile
-    image: pararius:local
-    container_name: pararius
+    image: househunter:local
+    container_name: househunter
     restart: unless-stopped
     tty: true
     command:
@@ -22,39 +22,21 @@ services:
       - ./:/var/www
       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
     networks:
-      - parariusearcher
-
-  bootstrap_app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: pararius:local
-    container_name: househunter_bootstrap
-    restart: unless-stopped
-    tty: true
-    environment:
-      APP_DEBUG: 0
-      APP_ENV: local
-    working_dir: /var/www
-    volumes:
-      - ./:/var/www
-      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
-    networks:
-      - parariusearcher
+      - househunter
 
   #MySQL Service
-  pararius_db:
+  househunter_db:
     image: 'mysql:5.7'
-    container_name: pararius_db
+    container_name: househunter_db
     restart: unless-stopped
     tty: true
     ports:
       - "3308:3306"
     environment:
-      MYSQL_ROOT_USER: pararius_local
+      MYSQL_ROOT_USER: househunter_local
       MYSQL_ROOT_PASSWORD: secret
-      MYSQL_DATABASE: parariusearcher
-      MYSQL_USER: pararius_local
+      MYSQL_DATABASE: househunter
+      MYSQL_USER: househunter_local
       MYSQL_PASSWORD: secret
       SERVICE_TAGS: dev
       SERVICE_NAME: mysql
@@ -64,7 +46,7 @@ services:
       - dbdata:/var/lib/mysql/
       - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
     networks:
-      - parariusearcher
+      - househunter
 
 #Docker Networks
 
@@ -82,7 +64,7 @@ services:
       # - ./docker/db/data:/var/lib/postgresql/data:rw
 ###< doctrine/doctrine-bundle ###
 networks:
-  parariusearcher:
+  househunter:
     driver: bridge
 
 #Volumes

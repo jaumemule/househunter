@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Pararius\Application\Bootstrap;
+namespace HouseHunter\Application\Bootstrap;
 
 use Symfony\Component\DependencyInjection\EnvVarProcessorInterface;
 

@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Pararius\CLI;
+namespace HouseHunter\CLI;
 
 use Doctrine\DBAL\Connection;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Goutte\Client;
@@ -14,41 +15,71 @@ use Symfony\Component\HttpClient\HttpClient;
 
 final class Scrapper extends Command
 {
+    const WITH_LAZINESS = 'no-laziness';
     protected static $defaultName = 'app:scrap';
 
     public function __construct(
         private Connection $sql,
-        private array $destinationUrl,
+        private string $destinationUrl,
         private string $telegramChatId,
         private string $telegramToken,
         private int $sleepTimeInMinutes,
+        private bool $isFakeRequest,
     ) {
         parent::__construct();
     }
 
     protected function configure(): void
     {
-        $this->setDescription('Will scrap Pararius. This tool is meant to massage your brain and drain stress');
+        $this->setDescription('Will scrap houses. This tool is meant to massage your brain and drain stress');
+        $this->addOption(self::WITH_LAZINESS, 'i', InputArgument::OPTIONAL, 'If debugging, sleep will trigger. This is to ignore it and manually execute it', false);
+        $this->addArgument(self::WITH_LAZINESS, InputArgument::OPTIONAL, 'If debugging, sleep will trigger. This is to ignore it and manually execute it', false);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $links = [];
+        $withLaziness = $input->getArgument(self::WITH_LAZINESS);
 
-        foreach ($this->destinationUrl as $url) {
+        if ($this->isFakeRequest === true && $withLaziness === false) {
+            echo "will sleep and do nothing";
+            sleep(1000000000000);
+        }
+
+        $links = [];
+        $text = [];
+
+        $urls = explode('|', $this->destinationUrl);
+
+        foreach ($urls as $url) {
             $crawler = $this->buildCrawler($url);
-            $links = array_merge($links, $this->fetchLinks($crawler));
+
+            $platform = $this->definePlatform($url);
+
+            $links = array_merge($links, $this->fetchLinks($platform, $crawler));
+            $text = array_merge($text, $this->fetchText($platform, $crawler));
         }
 
         $this->guardIsBanned($links, $output);
         $isDbEmpty = $this->isDbEmpty();
 
         $notified = false;
-        foreach ($links as $link) {
+        foreach ($links as $key => $link) {
+            $urlInfo = parse_url($link);
+
+            $baseUrl = $urlInfo['host']; //hostname
+
             if($this->persistIfDoesNotExist($link) === false) {
                 $notified = true;
                 if ($isDbEmpty === false) {
-                    $this->sendMessage('CHAN CHAN!!!! NEW APARTMENT AVAILABLE! ' . 'https://www.pararius.com/' . $link);
+                    if ($baseUrl !== 'https://www.pararius.com/') {
+                        $baseUrl = '';
+                        $platform = 'Pararius';
+                    } else {
+                        $platform = 'Funda';
+                    }
+
+                    $url = $baseUrl . $link;
+                    $this->sendMessage("CHAN CHAN!!!! \n\n " . $platform . "\n\n" . $text[$key] . "\n\n" . $url ."\n\n");
                 }
             }
         }
@@ -62,6 +93,11 @@ final class Scrapper extends Command
     }
 
     private function sendMessage($messaggio) {
+        if ($this->isFakeRequest === true) {
+            echo $messaggio .'\n';
+            return true;
+        }
+
         $url = "https://api.telegram.org/bot" . $this->telegramToken . "/sendMessage?chat_id=" . $this->telegramChatId;
         $url = $url . "&text=" . urlencode($messaggio);
         $ch = curl_init();
@@ -109,6 +145,9 @@ final class Scrapper extends Command
     private function done(OutputInterface $output): void
     {
         $output->writeln('Iteration completed.');
+        if ($this->isFakeRequest === true) {
+            exit(0);
+        }
         sleep($this->sleepTimeInMinutes * 60);
         exit(0);
     }
@@ -116,7 +155,9 @@ final class Scrapper extends Command
     private function buildCrawler(string $url): Crawler
     {
         // in case of local testing, uncomment this line
-//        return new Crawler(file_get_contents('/var/www/src/example/index.html'));
+        if ($this->isFakeRequest === true) {
+            return new Crawler(file_get_contents('/var/www/src/example/pararius.html'));
+        }
 
         $userAgent = \Campo\UserAgent::random();
         $client = new Client(HttpClient::create(array(
@@ -136,13 +177,38 @@ final class Scrapper extends Command
         return $client->request('GET', $url);
     }
 
-    private function fetchLinks(Crawler $crawler): array
+    private function fetchLinks(string $platform, Crawler $crawler): array
     {
-        $links = $crawler->filter('h2 > a')->each(function ($node) {
+        $selector = '';
+
+        if ($platform === 'Pararius') {
+            $selector = 'h2 > a';
+        } elseif ($platform === 'Funda') {
+            $selector = 'h2 > a'; // TODO
+        }
+
+        $links = $crawler->filter($selector)->each(function ($node) {
             $href = $node->extract(array('href'));
             return $links[] = $href[0];
         });
         return $links;
+    }
+
+    private function fetchText(string $platform, Crawler $crawler): array
+    {
+        $selector = '';
+
+        if ($platform === 'Pararius') {
+            $selector = 'h2';
+        } elseif ($platform === 'Funda') {
+            $selector = 'h2'; // TODO
+        }
+
+        $text = $crawler->filter($selector)->each(function ($node) {
+            $extracted = $node->text();
+            return $text[] = $extracted;
+        });
+        return $text;
     }
 
     /**
@@ -167,5 +233,22 @@ final class Scrapper extends Command
         if (in_array($hour, $healthCheckHour) && $minutes <= $minuteControl) {
             $this->sendMessage('This is a daily health check control. The app it is still alive, but no new listings are found.');
         }
+    }
+
+    /**
+     * @param string $url
+     * @return array
+     */
+    private function definePlatform(string $url): string
+    {
+        $urlInfo = parse_url($url);
+
+        $baseUrl = $urlInfo['host']; //hostname
+        if ($baseUrl !== 'https://www.pararius.com/') {
+            $platform = 'Pararius';
+        } else {
+            $platform = 'Funda';
+        }
+        return $platform;
     }
 }

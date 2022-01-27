@@ -1,6 +1,6 @@
 {
-  "name": "pararius/searcher",
-  "description": "Pararius searcher",
+  "name": "house/hunter",
+  "description": "HouseHunter!",
   "authors": [
     {
       "name": "Jaume Mulé"
@@ -44,7 +44,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Pararius\\": "src/"
+      "HouseHunter\\": "src/"
     }
   },
   "autoload-dev": {

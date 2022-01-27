@@ -43,10 +43,10 @@ WORKDIR /var/www
 # ----------------------------------------------------------------
 
 # Copy composer files
-COPY composer.lock composer.json /var/www/
+# COPY composer.lock composer.json /var/www/
 
 # Install composer dependencies
-RUN composer install --no-progress --no-plugins --no-scripts --no-dev --optimize-autoloader
+# RUN composer install --no-progress --no-plugins --no-scripts --no-dev --optimize-autoloader
 
 # Copy existing application directory contents
 COPY . /var/www
