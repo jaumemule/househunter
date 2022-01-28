@@ -22,7 +22,7 @@
     "doctrine/doctrine-migrations-bundle": "^3.1",
     "doctrine/orm": "^2.8",
     "fabpot/goutte": "^4.0",
-    "fzaninotto/faker": "^1.5",
+    "fakerphp/faker": "^1.18",
     "longman/telegram-bot": "^0.75.0",
     "ramsey/uuid": "^4.1",
     "symfony/console": "5.2.*",

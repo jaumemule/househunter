@@ -88,11 +88,11 @@
     "fabpot/goutte": {
         "version": "v4.0.2"
     },
+    "fakerphp/faker": {
+        "version": "v1.18.0"
+    },
     "friendsofphp/proxy-manager-lts": {
         "version": "v1.0.5"
-    },
-    "fzaninotto/faker": {
-        "version": "v1.5.0"
     },
     "guzzlehttp/guzzle": {
         "version": "7.4.1"
