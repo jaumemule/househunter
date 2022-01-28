@@ -222,7 +222,6 @@ final class Scrapper extends Command
     {
         if (count($links) === 0) {
             $this->sendMessage('I cold not fetch data! Perhaps we are banned in '.$platform.', ooops!');
-            $this->done($output);
         }
     }
 
