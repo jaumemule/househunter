@@ -160,7 +160,7 @@ final class Scrapper extends Command
 
         $faker = \Faker\Factory::create();
 
-        $userAgent = \Campo\UserAgent::random();
+//        $userAgent = \Campo\UserAgent::random();
         $client = new Client(HttpClient::create(array(
             'headers' => array(
                 'user-agent' => $faker->userAgent,
@@ -173,7 +173,7 @@ final class Scrapper extends Command
                 'Cache-Control' => 'no-cache',
             ),
         )));
-        $client->setServerParameter('HTTP_USER_AGENT', $userAgent);
+        $client->setServerParameter('HTTP_USER_AGENT', $faker->userAgent);
 
         return $client->request('GET', $url);
     }
