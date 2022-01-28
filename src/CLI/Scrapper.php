@@ -62,7 +62,7 @@ final class Scrapper extends Command
             $crawler = $this->buildCrawler($url);
             $platform = $this->definePlatform($url);
             $links = array_merge($links, $this->fetchLinks($platform, $crawler));
-            $this->guardIsBanned($links, $platform, $output);
+            $this->guardIsBanned($links, $platform, $url);
             $text = array_merge($text, $this->fetchText($platform, $crawler));
         }
 
@@ -158,13 +158,15 @@ final class Scrapper extends Command
             return new Crawler(file_get_contents('/var/www/src/example/funda.html'));
         }
 
+        $faker = \Faker\Factory::create();
+
         $userAgent = \Campo\UserAgent::random();
         $client = new Client(HttpClient::create(array(
             'headers' => array(
-                'user-agent' => $userAgent,
+                'user-agent' => $faker->userAgent,
                 'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language' => 'en-US,en;q=0.7',
-                'Referer' => 'http://mydomain.net/',
+                'Accept-Language' => $faker->locale,
+                'Referer' => $faker->url,
                 'Upgrade-Insecure-Requests' => '1',
                 'Save-Data' => 'on',
                 'Pragma' => 'no-cache',
@@ -215,13 +217,10 @@ final class Scrapper extends Command
         return $text;
     }
 
-    /**
-     * @param array $links
-     */
-    private function guardIsBanned(array $links, string $platform, OutputInterface $output): void
+    private function guardIsBanned(array $links, string $platform, string $url): void
     {
         if (count($links) === 0) {
-            $this->sendMessage('I cold not fetch data! Perhaps we are banned in '.$platform.', ooops!');
+            $this->sendMessage('I cold not fetch data! Perhaps we are banned in '.$platform.', while fetching '. $url .', ooops!');
         }
     }
 
