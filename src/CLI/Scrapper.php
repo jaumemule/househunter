@@ -160,10 +160,12 @@ final class Scrapper extends Command
 
         $faker = \Faker\Factory::create();
 
-//        $userAgent = \Campo\UserAgent::random();
+        $userAgent = \Campo\UserAgent::random();
+//        $userAgent = $faker->userAgent;
+
         $client = new Client(HttpClient::create(array(
             'headers' => array(
-                'user-agent' => $faker->userAgent,
+                'user-agent' => $userAgent,
                 'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
                 'Accept-Language' => $faker->locale,
                 'Referer' => $faker->url,
@@ -173,7 +175,7 @@ final class Scrapper extends Command
                 'Cache-Control' => 'no-cache',
             ),
         )));
-        $client->setServerParameter('HTTP_USER_AGENT', $faker->userAgent);
+        $client->setServerParameter('HTTP_USER_AGENT', $userAgent);
 
         return $client->request('GET', $url);
     }
