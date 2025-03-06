@@ -1,3 +1,8 @@
+# House Hunter Scrapper 
+- Written in PHP, helps folks finding housing in Holland
+- Just because I couldn't find where to live, this tool was sending me Telegram messages anytime a new apartment was available in a couple of search websites.
+
+
 # Installation instructions
 - Modify services.yaml configuration
 - Then `docker-compose build` will make all installations possible
